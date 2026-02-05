@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from loguru import logger
 
 from config.config import config
+from db.database import add_record, init_db
 from utils.ehentai import get_download_url, get_GP_cost
 from utils.status import GP_usage_log, get_status
 
@@ -12,6 +13,11 @@ logger.add("log.log", encoding="utf-8")
 
 
 app = FastAPI()
+
+
+@app.on_event("startup")
+async def startup_event():
+    await init_db()
 
 
 @app.post("/resolve")
@@ -29,6 +35,7 @@ async def resolve(request: Request):
             msg = "Success"
             if config["ehentai"]["max_GP_cost"] > 0:
                 GP_usage_log.append((time.time(), require_GP))
+            await add_record(gid, token, data["username"], require_GP, d_url)
         logger.info(
             f"{data['username']} 归档 https://e-hentai.org/g/{gid}/{token}/  需要{require_GP} GP  {msg}"
         )

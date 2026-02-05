@@ -4,7 +4,11 @@ import httpx
 
 from config.config import config
 
-http = httpx.AsyncClient(proxy=config["proxy"])
+proxy = config["proxy"]
+if not proxy:
+    proxy = None
+
+http = httpx.AsyncClient(proxy=proxy)
 
 EX_BASE_URL = "https://exhentai.org"
 EH_BASE_URL = "https://e-hentai.org"
@@ -17,7 +21,7 @@ headers = {
 
 def _get_base_url():
     try:
-        res = httpx.get(EX_BASE_URL, headers=headers, proxy=config["proxy"])
+        res = httpx.get(EX_BASE_URL, headers=headers, proxy=proxy)
         if res.text != "":
             return EX_BASE_URL
     except:

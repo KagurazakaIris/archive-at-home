@@ -10,8 +10,7 @@ from utils.ehentai import get_GP_cost
 
 GP_usage_log = deque()
 
-res = httpx.get("https://e-hentai.org/", proxy=config["proxy"])
-test = re.search(r"https://e-hentai\.org/g/(\d+)/([0-9a-f]{10})", res.text).groups()
+test = None
 
 
 def is_within_global_gp_limit() -> bool:
@@ -31,7 +30,18 @@ def is_within_global_gp_limit() -> bool:
 
 
 async def get_status():
+    global test
     try:
+        if test is None:
+            proxy = config["proxy"]
+            if not proxy:
+                proxy = None
+            async with httpx.AsyncClient(proxy=proxy) as client:
+                res = await client.get("https://e-hentai.org/", follow_redirects=True)
+                test = re.search(
+                    r"https://e-hentai\.org/g/(\d+)/([0-9a-f]{10})", res.text
+                ).groups()
+
         require_GP = await get_GP_cost(*test)
         result = "无免费额度" if require_GP else "正常"
     except Exception as e:
