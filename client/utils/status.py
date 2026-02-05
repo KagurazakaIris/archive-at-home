@@ -38,14 +38,23 @@ async def get_status():
                 proxy = None
             async with httpx.AsyncClient(proxy=proxy) as client:
                 res = await client.get("https://e-hentai.org/", follow_redirects=True)
-                test = re.search(
+                res.raise_for_status()
+                match = re.search(
                     r"https://e-hentai\.org/g/(\d+)/([0-9a-f]{10})", res.text
-                ).groups()
+                )
+                if match:
+                    test = match.groups()
+                else:
+                    logger.error(
+                        f"Could not find gallery in response. Status: {res.status_code}, URL: {res.url}"
+                    )
+                    logger.error(f"Response body start: {res.text[:200]}")
+                    raise ValueError("Cannot find gallery on E-Hentai front page")
 
         require_GP = await get_GP_cost(*test)
         result = "无免费额度" if require_GP else "正常"
     except Exception as e:
-        logger.error(e)
+        logger.exception("Error getting status")
         result = "解析功能异常"
 
     return {"msg": result, "enable_GP_cost": is_within_global_gp_limit()}
